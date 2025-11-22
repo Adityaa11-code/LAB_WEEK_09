@@ -3,11 +3,21 @@ package com.example.lab_week_09
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,8 +25,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 
-// Model data
-data class Student(var name: String)
+// Data class Student seperti di modul
+data class Student(
+    var name: String
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Home() {
-    // Mutable list yang akan di-observe oleh UI
+    // List data sebagai state
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -45,21 +57,21 @@ fun Home() {
         )
     }
 
-    // State untuk TextField (input)
-    var inputText by remember { mutableStateOf("") }
+    // State untuk input field
+    val inputField = remember {
+        mutableStateOf(Student(""))
+    }
 
-    // Kirim ke HomeContent: data + handler
     HomeContent(
         listData = listData,
-        inputText = inputText,
-        onInputChange = { inputText = it },
-        onSubmitClick = {
-            // Hanya add kalo tidak kosong (trim untuk safety)
-            val trimmed = inputText.trim()
-            if (trimmed.isNotEmpty()) {
-                listData.add(Student(trimmed))
-                // clear field setelah submit
-                inputText = ""
+        inputField = inputField.value,
+        onInputValueChange = { newValue ->
+            inputField.value = inputField.value.copy(name = newValue)
+        },
+        onButtonClick = {
+            if (inputField.value.name.isNotBlank()) {
+                listData.add(inputField.value)
+                inputField.value = Student("")
             }
         }
     )
@@ -67,75 +79,63 @@ fun Home() {
 
 @Composable
 fun HomeContent(
-    listData: List<Student>,
-    inputText: String,
-    onInputChange: (String) -> Unit,
-    onSubmitClick: () -> Unit
+    listData: SnapshotStateList<Student>,
+    inputField: Student,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit
 ) {
-    // Layout utama: vertical list dengan judul + input di atas, list di bawah
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Section atas: judul, textfield, tombol
+    LazyColumn {
+        // Bagian atas: title + input + button
         item {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Title
                 Text(
-                    text = stringResource(id = R.string.enter_item),
-                    style = MaterialTheme.typography.titleMedium
+                    text = stringResource(id = R.string.list_title),
+                    style = MaterialTheme.typography.titleLarge
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // TextField untuk input nama
+                // TextField input nama
                 TextField(
-                    value = inputText,
-                    onValueChange = { onInputChange(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                    value = inputField.name,
+                    onValueChange = { onInputValueChange(it) },
+                    modifier = Modifier.padding(top = 16.dp)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Tombol Submit: disabled saat input kosong
+                // Button submit
                 Button(
-                    onClick = { onSubmitClick() },
-                    enabled = inputText.trim().isNotEmpty(),
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .height(44.dp),
-                    shape = MaterialTheme.shapes.large,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    onClick = { onButtonClick() },
+                    modifier = Modifier.padding(top = 16.dp)
                 ) {
                     Text(text = stringResource(id = R.string.button_click))
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
             }
         }
 
-        // Section list: tampilkan semua nama
+        // List student
         items(listData) { item ->
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+            Column(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewHome() {
+fun HomePreview() {
     LAB_WEEK_09Theme {
         Home()
     }
